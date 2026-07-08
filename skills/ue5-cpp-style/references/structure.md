@@ -4,6 +4,7 @@
 
 ## 目录
 
+- [文件编码与换行符](#文件编码与换行符)
 - [缩进](#缩进)
 - [文件头](#文件头)
 - [头文件 Include 顺序](#头文件-include-顺序)
@@ -13,6 +14,12 @@
 - [GENERATED_BODY 后模板](#generated_body-后模板)
 - [Cpp 文件不使用 Region](#cpp-文件不使用-region)
 - [访问域规则](#访问域规则)
+
+---
+
+## 文件编码与换行符
+
+所有 `.h`、`.cpp`、`.Build.cs` 文件统一使用 **UTF-8 无签名**（UTF-8 without BOM）编码，换行符统一使用 **LF**（Unix 风格，`\n`）。不要使用 UTF-8 with BOM、UTF-16 或 CRLF（`\r\n`）。
 
 ---
 

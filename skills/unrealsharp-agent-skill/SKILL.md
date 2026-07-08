@@ -41,6 +41,7 @@ description: "Use when working with UnrealSharp in a Unreal Engine 5.5-5.7 proje
 - 如果用户要理解为什么某个 API 在 C# 里不可见，先检查它是否对 UE 反射系统可见。UnrealSharp 只能使用已暴露到反射的 API，这一点和 Blueprint 的限制高度一致。
 - 如果用户反馈“我本机能进编辑器，但团队 fresh clone 后打开编辑器失败”，除了检查声明和生成器规则，还要检查仓库里已提交的 `Script/**/obj/UHT/**/*.generated.cs` 是否缺文件、以及 `.gitignore` 是否把必要的 UnrealSharp 生成输入挡在 Git 之外。
 - 如果用户把本 Skill 当作“UnrealSharp 编程规范”来使用，默认先读 [03-csharp-authoring-patterns.md](./references/03-csharp-authoring-patterns.md)，其中应优先区分“Analyzer 会报错的硬规则”和“建议遵守的风格规则”。
+- 编写 C# 代码文件时，文件编码统一使用 UTF-8 无签名（UTF-8 without BOM），换行符统一使用 LF（Unix 风格，`\n`），不要使用 BOM 或 CRLF。
 
 ## 常用诊断顺序
 

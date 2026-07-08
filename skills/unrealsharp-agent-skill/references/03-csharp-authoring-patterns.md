@@ -90,6 +90,7 @@ UnrealSharp 不是把 `UCLASS`、`UPROPERTY`、`UFUNCTION` 这些宏原样搬到
 
 下面这些不一定都有 Analyzer 强制，但它们能显著降低 Glue 生成和 Blueprint 暴露风险：
 
+- 所有 C# 源文件统一使用 UTF-8 无签名（UTF-8 without BOM）编码，换行符统一使用 LF（`\n`），不要使用 BOM 或 CRLF。
 - 所有反射类型默认按 Unreal 命名习惯命名，不要在公开类型上混用纯 C# 风格命名。
 - 反射类型优先用 `partial`，尤其是会参与 BlueprintEvent、生成器扩展或热重载的类型。
 - 业务逻辑只写在业务工程里，不要写进 `*.Glue` 或 `obj/UHT/**/*.generated.cs`。

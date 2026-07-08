@@ -16,6 +16,7 @@ description: UE5 C++ 编码风格指南。用于创建、修改、审查或格�
 - 注释解释意图、约束、编辑器行为和反射 API 语义，不要给每一行代码写机械注释。
 - 代码符号默认使用 ASCII；中文主要用于注释、编辑器显示名、Tooltip、数据验证消息等已有中文上下文。
 - 统一使用 Tab 缩进，不使用空格缩进。
+- 文件编码统一使用 UTF-8 无签名（UTF-8 without BOM），换行符统一使用 LF（Unix 风格，`\n`）。
 
 ## 按任务类型加载参考文档
 
@@ -41,6 +42,8 @@ description: UE5 C++ 编码风格指南。用于创建、修改、审查或格�
 
 **结构层面**（详见 structure.md）
 
+- [ ] 文件编码为 UTF-8 无签名（无 BOM）。
+- [ ] 换行符为 LF。
 - [ ] 统一使用 Tab 缩进，不使用空格缩进。
 - [ ] `.h` 文件 include 顺序正确，`.generated.h` 位于最后。
 - [ ] `.h` 和 `.cpp` 中的 Editor-only include 都用 `#if WITH_EDITOR` 单独包裹。
