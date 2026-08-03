@@ -4,6 +4,7 @@
 
 ## 目录
 
+- [Cpp 文件拆分](#cpp-文件拆分)
 - [Editor-only 代码](#editor-only-代码)
 - [静态成员](#静态成员)
 - [匿名 Namespace Helper](#匿名-namespace-helper)
@@ -11,6 +12,26 @@
 - [条件换行](#条件换行)
 - [数据验证风格](#数据验证风格)
 - [Build.cs 风格](#buildcs-风格)
+
+---
+
+## Cpp 文件拆分
+
+单个 `.cpp` 文件**最好保持在 300 行以内**；当功能特别集中、难以干净拆分时可适当放宽，但应及时审视是否出现了职责膨胀。
+
+拆分以**功能内聚**为首要原则，不必严格对照头文件 `.h` 中的 `#pragma region`。region 划分可作为参考，但当一个 region 跨多个功能、或多个 region 同属一个功能时，应以实际功能边界为准。
+
+命名约定：`<OriginalName>_<Feature>.cpp`，例如 `TcsAttributeDefinition_Meta.cpp`、`TcsAttributeDefinition_Editor.cpp`。主实现文件保持 `<OriginalName>.cpp`。
+
+拆分后每个 `.cpp` 文件仍遵循自身头文件 include 第一位、版权声明、Editor-only 包裹等所有 `.cpp` 规则。`#pragma region` 仍然只出现在 `.h` 中，拆分出的 `.cpp` 文件同样不使用 region。
+
+拆分示例（假设 `TcsAttributeDefinition.cpp` 已超出目标行数，按功能拆分）：
+
+```
+TcsAttributeDefinition.cpp          // 核心实现（构造、主数据访问等）
+TcsAttributeDefinition_Meta.cpp     // 元数据相关实现
+TcsAttributeDefinition_Editor.cpp   // 编辑器相关实现（含 WITH_EDITOR 块）
+```
 
 ---
 

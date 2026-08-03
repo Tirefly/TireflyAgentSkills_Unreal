@@ -12,9 +12,11 @@ description: UE5 C++ 编码风格指南。用于创建、修改、审查或格�
 - 先遵循 Unreal Engine C++ 约定，再遵循本风格。
 - 反射类型必须正确使用 `UCLASS`、`USTRUCT`、`UENUM`、`UINTERFACE`、`UPROPERTY`、`UFUNCTION`。
 - 头文件使用清晰的 `#pragma region` 组织；`.cpp` 文件保持平铺，不使用 region。
+- 单个 `.cpp` 文件最好保持在 300 行以内，超出时按功能内聚（而非严格对照 region）拆分为多个 `.cpp` 文件（详见 implementation.md）。
 - 类、结构体、枚举、委托、成员变量、成员函数应有必要注释。
 - 注释解释意图、约束、编辑器行为和反射 API 语义，不要给每一行代码写机械注释。
 - 代码符号默认使用 ASCII；中文主要用于注释、编辑器显示名、Tooltip、数据验证消息等已有中文上下文。
+- 类型、函数、变量和字段应按实际行为与结果命名，不使用泛化动词偷懒。慎用 `Resolve`：只有从 Id、引用、句柄或候选集合中取得具体对象、值或目标时才使用；计算用 `Evaluate` / `Calculate`，构造用 `Build` / `Create`，校验用 `Validate`，修改状态用 `Apply`，选择用 `Select` / `Filter`，表示转换用 `Convert`。
 - 统一使用 Tab 缩进，不使用空格缩进。
 - 文件编码统一使用 UTF-8 无签名（UTF-8 without BOM），换行符统一使用 LF（Unix 风格，`\n`）。
 
@@ -65,6 +67,7 @@ description: UE5 C++ 编码风格指南。用于创建、修改、审查或格�
 **实现层面**（详见 implementation.md）
 
 - [ ] `.cpp` 文件按函数顺序平铺组织，函数间 1 空行，不使用 region。
+- [ ] 单个 `.cpp` 尽量控制在 300 行以内；超出时已按功能拆分为多个 `.cpp` 文件。
 - [ ] 多参数函数实现时参数全部换行，缩进 +1 Tab。
 - [ ] Editor-only 声明和实现被 `#if WITH_EDITOR` 包裹，`#endif` 紧贴最后的 `}`。
 - [ ] 改动保持局部，不重排无关代码。

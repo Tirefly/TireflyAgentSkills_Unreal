@@ -251,7 +251,7 @@ public:
 
 ## Cpp 文件不使用 Region
 
-`.cpp` 文件按函数顺序直接组织，不使用 `#pragma region`。
+`.cpp` 文件按函数顺序直接组织，不使用 `#pragma region`。当 `.cpp` 超出目标行数时按功能拆分为多个 `.cpp` 文件，详见 [implementation.md 的 Cpp 文件拆分章节](implementation.md#cpp-文件拆分)。
 
 ## 访问域规则
 
