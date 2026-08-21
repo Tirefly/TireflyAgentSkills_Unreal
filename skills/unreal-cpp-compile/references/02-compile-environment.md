@@ -46,7 +46,7 @@ E:\UnrealEngine\UE_5.6\
 
 ## 验证 UnrealBuildTool
 
-UnrealBuildTool（UBT）是 UE5 的编译入口。其路径固定为：
+UnrealBuildTool（UBT）是 Unreal 的编译入口。其路径固定为：
 
 ```
 E:\UnrealEngine\UE_<版本>\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.exe
@@ -68,7 +68,7 @@ UBT 是一个 .NET 程序，通过命令行调用。编译命令的标准格式�
 
 ## Target 选择：Game 还是 Editor
 
-UE5 编译目标分为两类：
+Unreal 编译目标分为两类：
 
 ### Game Target
 
@@ -97,7 +97,7 @@ UE5 编译目标分为两类：
 
 ## Config 选择
 
-UE5 编译配置分为四种，按从快到慢、从功能受限到完整排序：
+Unreal 编译配置分为四种，按从快到慢、从功能受限到完整排序：
 
 ### Development（默认推荐）
 

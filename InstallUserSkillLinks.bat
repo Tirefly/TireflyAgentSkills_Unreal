@@ -8,7 +8,7 @@ set "REPO_ROOT=%~dp0"
 set "SOURCE_SKILLS=%REPO_ROOT%skills"
 set "TARGET_SKILLS=%USERPROFILE%\.agents\skills"
 
-echo Tirefly UE5 Agent Skills link installer
+echo Tirefly Unreal Agent Skills link installer
 echo.
 echo Source: "%SOURCE_SKILLS%"
 echo Target: "%TARGET_SKILLS%"

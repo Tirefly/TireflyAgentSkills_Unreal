@@ -1,18 +1,18 @@
 ---
-name: ue5-cpp-compile
-description: UE5 C++ 项目编译与引擎环境判定指南。必须用于任何 UE5 引擎版本判定、EngineAssociation 解析、Unreal Engine 安装目录确认、UnrealBuildTool 路径验证、刷新项目文件、编译/构建 Unreal Engine C++ 工程、Game/Editor Target 的 Debug/DebugGame/Development/Shipping 配置编译、清理重建、切换引擎版本后重建等任务。当用户请求编译 UE5 项目、build UE5、构建 C++ 工程、生成项目文件、UnrealBuildTool 编译、确认 UE 引擎路径或版本时使用此 Skill。
+name: unreal-cpp-compile
+description: Unreal C++ 项目编译与引擎环境判定指南。必须用于任何 Unreal 引擎版本判定、EngineAssociation 解析、Unreal Engine 安装目录确认、UnrealBuildTool 路径验证、刷新项目文件、编译/构建 Unreal Engine C++ 工程、Game/Editor Target 的 Debug/DebugGame/Development/Shipping 配置编译、清理重建、切换引擎版本后重建等任务。当用户请求编译 Unreal 项目、build Unreal、构建 C++ 工程、生成项目文件、UnrealBuildTool 编译、确认 UE 引擎路径或版本时使用此 Skill。
 ---
 
-# UE5 C++ 项目编译
+# Unreal C++ 项目编译
 
-这个 Skill 是面向 Agent 的 UE5 C++ 项目编译工作流指南，也是用户级唯一规范中 UE5 引擎版本判定、Unreal Engine 安装目录约定和 C++ 编译流程的承载 Skill。处理 UE5 引擎版本、引擎路径、UBT 路径、项目文件刷新或 C++ 编译时，必须先使用本 Skill。
+这个 Skill 是面向 Agent 的 Unreal C++ 项目编译工作流指南，也是用户级唯一规范中 Unreal 引擎版本判定、Unreal Engine 安装目录约定和 C++ 编译流程的承载 Skill。处理 Unreal 引擎版本、引擎路径、UBT 路径、项目文件刷新或 C++ 编译时，必须先使用本 Skill。
 
-编译 UE5 C++ 项目时，必须按"识别项目 → 判定引擎版本 → 确定编译环境 → 执行编译"的顺序进行，不可跳过任何一步，也不可凭直觉或缓存文件猜测引擎版本。
+编译 Unreal C++ 项目时，必须按"识别项目 → 判定引擎版本 → 确定编译环境 → 执行编译"的顺序进行，不可跳过任何一步，也不可凭直觉或缓存文件猜测引擎版本。
 
 适用范围：
 
-- 识别一个目录是否为需要编译 C++ 工程的 UE5 项目
-- 从 `.uproject` 的 `EngineAssociation` 字段判定项目使用的 UE5 版本
+- 识别一个目录是否为需要编译 C++ 工程的 Unreal 项目
+- 从 `.uproject` 的 `EngineAssociation` 字段判定项目使用的 Unreal 引擎版本
 - 验证引擎安装目录与 UnrealBuildTool 是否可用
 - 确认用户级约定的 Unreal Engine 安装根目录 `E:\UnrealEngine\`
 - 区分 Game Target 与 Editor Target，区分 Debug/DebugGame/Development/Shipping 配置的语义和适用场景
@@ -22,7 +22,7 @@ description: UE5 C++ 项目编译与引擎环境判定指南。必须用于任�
 不适用范围：
 
 - UnrealSharp 托管层（C# Glue / BuildEmitLoadOrder）的编译问题，交给 `unrealsharp-agent-skill`
-- UE5 C++ 代码风格问题，交给 `ue5-cpp-style`
+- Unreal C++ 代码风格问题，交给 `unreal-cpp-style`
 
 ## 核心流程（四步，不可跳过）
 
@@ -53,7 +53,7 @@ description: UE5 C++ 项目编译与引擎环境判定指南。必须用于任�
 
 ## 快速检查清单
 
-完成 UE5 C++ 编译前，确认以下事项：
+完成 Unreal C++ 编译前，确认以下事项：
 
 **项目识别**（详见 01-project-detection.md）
 

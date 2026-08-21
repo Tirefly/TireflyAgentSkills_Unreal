@@ -1,9 +1,9 @@
 ---
-name: ue5-cpp-style
-description: UE5 C++ 编码风格指南。用于创建、修改、审查或格式化 Unreal Engine C++ 文件，包括 .h、.cpp、.Build.cs、UCLASS/USTRUCT/UENUM、UPROPERTY/UFUNCTION、Editor-only 代码、Unreal 模块代码、Gameplay 插件 C++ 代码。编辑 UE5 C++ 前使用此 Skill，以匹配 Tirefly 风格的文件组织、注释、空行、region、访问域、命名、反射宏和实现文件布局。
+name: unreal-cpp-style
+description: Unreal C++ 编码风格指南。用于创建、修改、审查或格式化 Unreal Engine C++ 文件，包括 .h、.cpp、.Build.cs、UCLASS/USTRUCT/UENUM、UPROPERTY/UFUNCTION、Editor-only 代码、Unreal 模块代码、Gameplay 插件 C++ 代码。编辑 Unreal C++ 前使用此 Skill，以匹配 Tirefly 风格的文件组织、注释、空行、region、访问域、命名、反射宏和实现文件布局。
 ---
 
-# UE5 C++ 编码风格
+# Unreal C++ 编码风格
 
 编辑 Unreal Engine C++ 代码时遵循此风格。若本指南与目标文件附近既有风格冲突，优先匹配目标文件附近的实际写法。不要为了套用风格而重排无关代码。
 
@@ -40,7 +40,7 @@ description: UE5 C++ 编码风格指南。用于创建、修改、审查或格�
 
 ## 快速检查清单
 
-完成 UE5 C++ 编辑前，确认以下事项：
+完成 Unreal C++ 编辑前，确认以下事项：
 
 **结构层面**（详见 structure.md）
 
