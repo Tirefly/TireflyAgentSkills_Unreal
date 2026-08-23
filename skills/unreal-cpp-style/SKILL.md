@@ -59,6 +59,7 @@ description: Unreal C++ 编码风格指南。用于创建、修改、审查或�
 
 - [ ] 新增反射类、结构体、枚举、委托、属性、函数有必要注释。
 - [ ] 枚举值前缀是枚举名缩写全大写（如 `ETcsAttributeRangeType` → `ART_`）。
+- [ ] 策略族具体文件/类型遵循 `TcsAttr<族缩写>_<策略>` 命名（如 `TcsAttrModOpEvaluator_Constant`），族基类保留描述性全名（详见 reflection.md 的「策略族命名」）。
 - [ ] `UMETA` 同时带 `DisplayName` 和 `ToolTip`。
 - [ ] UPROPERTY/UFUNCTION 非 Meta specifier 在前、`Meta` 在后，续行用 Tab 缩进。
 - [ ] 覆写虚函数同时保留 `virtual` 和 `override`。

@@ -9,6 +9,7 @@
 - [结构体风格](#结构体风格)
 - [类风格](#类风格)
 - [命名规则](#命名规则)
+- [策略族命名](#策略族命名)
 - [Category 与 Region 的关系](#category-与-region-的关系)
 - [反射声明换行风格](#反射声明换行风格)
 - [UFUNCTION 风格](#ufunction-风格)
@@ -156,6 +157,30 @@ bool bShowInUI = true;                  // bool 使用 b 前缀
 FName MinValueAttribute = NAME_None;
 float MinValue = 0.f;
 ```
+
+## 策略族命名
+
+一个职责族由「族基类 + 多个具体策略」组成时（如 Clamp 策略、Modifier 合并器、Operand Evaluator），遵循以下模式：
+
+- **族基类**使用描述性全名：`TcsAttribute<族名>`（如 `TcsAttributeModifierOperandEvaluator`、`TcsAttributeModifierMerger`、`TcsAttributeClampStrategy`）。
+- **具体策略文件与类型**使用 `TcsAttr<族缩写>_<策略名>`：族缩写取族职责的短缩写（如 `ModOpEvaluator`、`ModMerger`、`ClampStrategy`），全族一致，避免每个具体文件复制完整基类长名。
+- **具体策略类型名与文件基名一致**：`TcsAttrModOpEvaluator_Constant.h` 声明 `UTcsAttrModOpEvaluator_Constant`。
+- **同族附属数据类型**（Payload、Context、枚举）可使用更短的域级缩写，前后缀位置统一：如 Payload 用 `FTcsAttrOpPayload_<类型>`（`FTcsAttrOpPayload_Constant`），来源枚举用 `ETcsAttrOp<域>_<子域>`（`ETcsAttrOpSource_StateParam`，值前缀 `AOSSP_` 按枚举缩写规则）。
+
+```cpp
+// 族基类：描述性全名
+// Attribute/AttrModOperand/TcsAttributeModifierOperandEvaluator.h
+class UTcsAttributeModifierNumericEvaluator : public UObject { ... };
+
+// 具体策略：族缩写 + 策略名，类型名与文件基名一致
+// Attribute/AttrModOperand/TcsAttrModOpEvaluator_Constant.h
+class UTcsAttrModOpEvaluator_Constant : public UTcsAttributeModifierNumericEvaluator { ... };
+
+// 同族附属数据类型：更短的域级缩写，前后缀位置统一
+struct FTcsAttrOpPayload_Constant : public FTcsAttributeOperandPayload { ... };
+```
+
+族缩写选择要点：短、可读、能区分职责；同一族内的文件与主策略类型保持一致缩写，附属类型可用更短缩写但前缀语义要可辨。该模式与 TCS OpenSpec 的 `runtime-module-file-layout` 文件布局约定一致。
 
 ## Category 与 Region 的关系
 
