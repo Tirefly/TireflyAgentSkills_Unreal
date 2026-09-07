@@ -4,6 +4,7 @@
 
 ## 目录
 
+- [模块目录布局](#模块目录布局)
 - [文件编码与换行符](#文件编码与换行符)
 - [缩进](#缩进)
 - [文件头](#文件头)
@@ -14,6 +15,17 @@
 - [GENERATED_BODY 后模板](#generated_body-后模板)
 - [Cpp 文件不使用 Region](#cpp-文件不使用-region)
 - [访问域规则](#访问域规则)
+
+---
+
+## 模块目录布局
+
+模块目录**平铺，不区分 Public/Private**：
+
+- 模块类文件（`<模块名>Module.h` / `<模块名>Module.cpp`，含 `IModuleInterface` 实现与 `IMPLEMENT_MODULE`）与 `<模块名>.Build.cs` 同级，直接放模块根目录。
+- 其余代码按领域分子目录（PascalCase，如 `Attribute/`、`EventBus/`、`Clock/`），`.h` 与 `.cpp` 同目录成对。
+- 无 Public/Private 时 UBT 将模块根目录整体作为 include 根：include 路径一律模块根相对（如 `#include "Handle/FTcsSourceHandle.h"`），对外头文件无需搬运 Public。
+- 模块日志分类声明放 `<模块名>Module.h`（`DECLARE_LOG_CATEGORY_EXTERN`），定义放对应 `.cpp`。
 
 ---
 
