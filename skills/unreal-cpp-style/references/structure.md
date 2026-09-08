@@ -24,8 +24,8 @@
 
 - 模块根目录平铺：`<模块名>.Build.cs`、`<模块名>Module.h`、`<模块名>Module.cpp`（`IModuleInterface` 实现 + `IMPLEMENT_MODULE`）——**仅这三（组）文件在根**。
 - 其余代码 **Public/Private 分层**：对外头文件（UCLASS/UINTerface/被其他模块 include 的声明）放 `Public/<领域子目录>/`（PascalCase 领域名，如 `Public/Attribute/`、`Public/EventBus/`）；实现 `.cpp` 与模块内部头放 `Private/<领域子目录>/`；`.h` 与 `.cpp` 同名成对分置两侧。
-- include 路径：对外头以 `Public/` 为 include 根（`#include "Attribute/FTcsAttributeName.h"`——外部模块经对方 Public 解析）；`Private/` 代码引用公开头同写法；引用模块根的 `Module.h`（日志分类声明所在）用模块内相对路径（`Private/` 一级 `#include "../TcsCoreModule.h"`，二级目录 `../../`）。
-- 模块日志分类声明放 `<模块名>Module.h`（`DECLARE_LOG_CATEGORY_EXTERN`），定义放对应 `.cpp`。
+- **日志分类独立通道文件**（不进 Module.h/Module.cpp）：`Public/<模块名>LogChannel.h`（`DECLARE_LOG_CATEGORY_EXTERN`）+ `Private/<模块名>LogChannel.cpp`（`DEFINE_LOG_CATEGORY`）——使用日志只 include LogChannel 头（Public 根相对），**不需要 include Module.h**；分类命名 `LogTcs<模块名>`。
+- include 路径：对外头以 `Public/` 为 include 根（`#include "Attribute/FTcsAttributeName.h"`——外部模块经对方 Public 解析）；`Private/` 代码引用公开头与 LogChannel 头同写法。
 
 ---
 
