@@ -9,6 +9,7 @@
 - [Game Target 编译命令](#game-target-编译命令)
 - [Editor Target 编译命令](#editor-target-编译命令)
 - [常用附加参数](#常用附加参数)
+- [受限写权限环境与调用形式（实证）](#受限写权限环境与调用形式实证)
 - [编译失败排查顺序](#编译失败排查顺序)
 - [完整执行示例](#完整执行示例)
 
@@ -135,6 +136,8 @@ Editor Target 产物为编辑器可执行文件。目标名格式为 `<ProjectNa
 | `-noxge` | 禁用 XGE 分布式编译 |
 | `-noubtmakefiles` | 不生成 UBT makefile 缓存 |
 | `-log` | 输出详细日志信息 |
+| `-Log=<日志文件路径>` | 指定 UBT 日志落盘路径（默认写引擎目录——受限写权限环境下必须重定向，见下节） |
+| `-WaitMutex` | 等待其他 UBT 实例释放互斥锁（连续/并行调用时避免互斥冲突） |
 
 使用建议：
 
@@ -142,6 +145,33 @@ Editor Target 产物为编辑器可执行文件。目标名格式为 `<ProjectNa
 - 排查编译错误：追加 `-verbose`。
 - 怀疑中间文件损坏：先尝试 `-rebuild`，仍失败再用 `-clean`。
 - 怀疑 makefile 缓存问题：追加 `-noubtmakefiles`。
+- 受限写权限环境（沙箱 / CI）：必须加 `-Log=<可写路径>`，见下节。
+
+---
+
+## 受限写权限环境与调用形式（实证）
+
+2026-08—09 在 workspace-write 沙箱下反复编译本工作区项目（LAC / TNS 系列）实测所得，三条结论：
+
+### 日志落盘越权会让编译启动即失败
+
+UBT 启动时会把日志写/备份到**引擎目录**（而非项目目录），在仅允许写工作区的沙箱下会因越权直接失败。处理：
+
+- 需要 `danger-full-access` 类写权限，**并且**加 `-Log=<工作区可写路径>` 把日志导向可写目录（两个条件缺一不可）。
+
+### 等价调用形式：Build.bat
+
+除直接调 `UnrealBuildTool.exe` 外，引擎自带的批处理同样可用（会自动准备运行环境，适合需要完整环境变量的场景）：
+
+```
+"E:\UnrealEngine\UE_<版本>\Engine\Build\BatchFiles\Build.bat" <Target> Win64 <Config> -Project="<ProjectPath>\<ProjectName>.uproject" -WaitMutex -Log=<工作区日志路径>
+```
+
+直接调 UBT（本文件各命令模板的形式）与 `Build.bat` 在本工作区均实测可用；新增文件后仍须先刷新项目文件。
+
+### 多目标编译顺序：先 Editor，后 Game
+
+同时需要两种目标时，**先编 Editor 目标（覆盖 UHT 反射代码生成），再编 Game 目标**——顺序反了会因 UHT 产物覆盖不全出现假失败。若只需其一，按 [Target 选择](../references/02-compile-environment.md) 规则取用即可。
 
 ---
 

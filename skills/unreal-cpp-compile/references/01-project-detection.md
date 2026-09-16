@@ -79,6 +79,7 @@ Unreal 项目的根标志是 `.uproject` 文件。识别步骤：
 - `"5.5"` → 引擎目录 `E:\UnrealEngine\UE_5.5`
 - `"5.6"` → 引擎目录 `E:\UnrealEngine\UE_5.6`
 - `"5.7"` → 引擎目录 `E:\UnrealEngine\UE_5.7`
+- `"5.8"` → 引擎目录 `E:\UnrealEngine\UE_5.8`
 
 ### 格式二：自定义引擎 GUID
 
@@ -92,6 +93,8 @@ Unreal 项目的根标志是 `.uproject` 文件。识别步骤：
 
 1. 在 Windows 注册表 `HKEY_CURRENT_USER\Epic Games\Unreal Engine\Builds` 下查找该 GUID 对应的引擎路径。
 2. 如果找不到，向用户询问引擎安装路径，不要猜测。
+
+> **本工作区实证逃逸口（2026-09-16）**：LAC 项目的 `EngineAssociation` 是一个**未在启动器注册的自定义 GUID**，注册表查不到。此时无需注册：本工作区引擎固定安装在 `E:\UnrealEngine\UE_<版本>`（见 [02-compile-environment.md](02-compile-environment.md)），按项目实际使用的版本直接拼接该目录即可——编译用该目录下的 `UnrealBuildTool.exe`，启动编辑器用 `UnrealEditor.exe -project="<ProjectPath>\<ProjectName>.uproject"`（不注册也能直接拉起）。判断"实际使用的版本"优先问用户，其次看插件/代码里已使用的引擎 API 特征，**不要**从 `.sln`/`Intermediate` 等来源推断（见下节）。
 
 ### 解析流程
 
