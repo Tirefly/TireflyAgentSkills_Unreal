@@ -65,15 +65,17 @@ float ClampAttributeValue(float SourceValue, float MinValue, float MaxValue) con
 
 ```cpp
 // 属性范围类型
+// 枚举值前缀 ART_ 是 AttributeRangeType 的缩写（注记放这里，不要放枚举体内——见下方说明）
 UENUM(BlueprintType)
 enum class ETcsAttributeRangeType : uint8
 {
-	// 前缀 ART_ 是 AttributeRangeType 的缩写
 	ART_None  = 0		UMETA(DisplayName = "无", ToolTip = "属性值范围的一侧（最小值或最大值）没有限制"),
-	ART_Static = 1		UMETA(DisplayName = "静态", ToolTip = "属性值范围的一侧（最小值或最大值）是一个恒定的数值"),
+	ART_Static = 1		UMETA(DisplayName = "静态", ToolTip = "属性值范围的一侧（最小值或最大值）是一个恒定数值"),
 	ART_Dynamic = 2		UMETA(DisplayName = "动态", ToolTip = "属性值范围的一侧（最小值或最大值）是动态的，受另一个属性值的影响"),
 };
 ```
+
+> **前缀注记不要放在枚举体内**（2026-09-16 UHT 实证）：枚举值上方的 `//` 行注释会被 UHT 当作**该值的 ToolTip 元数据**，与同一 `UMETA(... ToolTip = "...")` 并存时报 `Metadata key 'ToolTip' first seen with value … then …` 并直接编译失败。故前缀注记放枚举的 doc 块或 `UENUM` 上方的行注释（如上行示例），枚举值说明只写在 `UMETA` 里。详见 `unreal-development-workflow` 技能的引擎机制事实一节。
 
 如果附近已有枚举值对齐方式，保留附近风格，不要只为了对齐重排整段代码。
 

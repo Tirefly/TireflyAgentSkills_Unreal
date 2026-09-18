@@ -25,9 +25,32 @@
 - 模块根目录平铺：`<模块名>.Build.cs`、`<模块名>Module.h`、`<模块名>Module.cpp`（`IModuleInterface` 实现 + `IMPLEMENT_MODULE`）——**仅这三（组）文件在根**。
 - 其余代码 **Public/Private 分层**：对外头文件（UCLASS/UINTerface/被其他模块 include 的声明）放 `Public/<领域子目录>/`（PascalCase 领域名，如 `Public/Attribute/`、`Public/EventBus/`）；实现 `.cpp` 与模块内部头放 `Private/<领域子目录>/`；`.h` 与 `.cpp` 同名成对分置两侧。
 - **日志分类独立通道文件**（不进 Module.h/Module.cpp）：`Public/<模块名>LogChannel.h`（`DECLARE_LOG_CATEGORY_EXTERN`）+ `Private/<模块名>LogChannel.cpp`（`DEFINE_LOG_CATEGORY`）——使用日志只 include LogChannel 头（Public 根相对），**不需要 include Module.h**；分类命名 `LogTcs<模块名>`。
-- include 路径：对外头以 `Public/` 为 include 根（`#include "Attribute/FTcsAttributeName.h"`——外部模块经对方 Public 解析）；`Private/` 代码引用公开头与 LogChannel 头同写法。
+- include 路径：对外头以 `Public/` 为 include 根（`#include "Attribute/TcsAttributeName.h"`——外部模块经对方 Public 解析）；`Private/` 代码引用公开头与 LogChannel 头同写法。
 
 ---
+
+## 文件命名：文件名 = 类型名去掉前缀（UE 规范）
+
+**文件名与它承载的类型同名，但不含类型前缀字母**（A/U/F/T/I）——这是 UE 官方规范项，适用于所有 `.h` / `.cpp`：
+
+| 类型 | 正确文件名 | 错误写法 |
+|---|---|---|
+| `UTcsAttrModDef` | `TcsAttrModDef.h` / `.cpp` | ~~`UTcsAttrModDef.h`~~ |
+| `FTcsAttributeName` | `TcsAttributeName.h` | ~~`FTcsAttributeName.h`~~ |
+| `TTcsInstancePool` | `TcsInstancePool.h` | ~~`TTcsInstancePool.h`~~ |
+| `ITcsTimeSource` | `TcsTimeSource.h` | ~~`ITcsTimeSource.h`~~ |
+| `UTcsAttributeSubsystem` | `TcsAttributeSubsystem.h` / `.cpp` | ~~`UTcsAttributeSubsystem.h`~~ |
+
+补充规则：
+
+- **U/I 成对同住一文件**（`UINTERFACE` + 接口类，如 `UTcsAttributeProvider` / `ITcsAttributeProvider`），文件名取去前缀后的类型名（`TcsAttributeProvider.h`）——不写成 `ITcsAttributeProvider.h`。
+- **一文件多类型**：文件名取该文件的**主导类型**（引擎同款先例：`FHitResult` 住 `EngineTypes.h`、`FTableRowBase` 住 `DataTable.h`）。
+- **`.generated.h` 跟随头文件名**：头文件改名后 `#include "TcsAttributeName.generated.h"` 与 UHT 产物名同步变化（UHT 按头文件名生成）——改名必须连 include 一起改。
+- **不受本规则约束的文件**：模块壳 `Tcs<模块名>Module.h/.cpp`（类型 `FTcs<模块名>Module`，去前缀后同名、本就一致）、日志通道 `Tcs<模块名>LogChannel.h/.cpp`（载体是**日志分类名**而非类型名）、`Build.cs`。
+- **改写既有文件名时**：`Public`/`Private` 两侧同名成对一起改，并全库同步 include 与文档路径引用（旧名跨文档扫描验证清零），最后以一次全量编译验证——UHT 产物名换了，编译是唯一可靠的检查。
+
+---
+
 
 ## 文件编码与换行符
 

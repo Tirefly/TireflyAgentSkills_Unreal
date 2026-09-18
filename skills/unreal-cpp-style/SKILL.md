@@ -44,7 +44,8 @@ description: Unreal C++ 编码风格指南。用于创建、修改、审查或�
 
 **结构层面**（详见 structure.md）
 
-- [ ] 模块目录布局为平铺（无 Public/Private），模块类文件与 Build.cs 同级，领域子目录 PascalCase（详见 structure.md 模块目录布局）。
+- [ ] 文件名与类型名一致但**去掉前缀字母**（`UTcsAttrModDef` → `TcsAttrModDef.h`；`FTcsAttributeName` → `TcsAttributeName.h`；U/I 成对同住一文件取去前缀名）——详见 structure.md「文件命名」。
+- [ ] 模块根只平铺 `Build.cs` + `Module.h/.cpp`，其余走 Public/Private 分层 + 领域子目录 PascalCase（详见 structure.md 模块目录布局）。
 - [ ] 文件编码为 UTF-8 无签名（无 BOM）。
 - [ ] 换行符为 LF。
 - [ ] 统一使用 Tab 缩进，不使用空格缩进。
