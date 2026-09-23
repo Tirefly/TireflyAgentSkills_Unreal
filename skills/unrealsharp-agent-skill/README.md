@@ -10,6 +10,7 @@
 - 创建 C# 项目或 C# 插件项目
 - `UClass`、`UProperty`、`UFunction` 等 UnrealSharp C# 写法
 - 编辑器启动卡住、glue 编译失败、托管构建报错等排查
+- 挂调试器、IDE（Rider / VSCode / Visual Studio）配置、断点与局部变量异常的排查
 
 ## 适用对象
 
@@ -29,6 +30,7 @@
 - `references/04-project-and-plugin-creation.md`: C# 项目 / 插件创建路径
 - `references/05-troubleshooting-and-diagnostics.md`: 常见故障排查
 - `references/06-official-links-and-local-entrypoints.md`: 官方链接和本地高价值入口
+- `references/07-debugging-and-ide-workflow.md`: C# 调试与 IDE 工作流（含四个高频坑）
 
 ## 安装
 
@@ -51,6 +53,7 @@ git submodule add https://github.com/Tirefly/TireflyAgentSkills_Unreal.git .gith
 - `UnrealSharp.Automation` / `BuildEmitLoadOrder` / `LoadOrder.json`
 - `Script/*.csproj`
 - UnrealSharp 启动卡住、托管编译失败、C# 暴露规则异常
+- 挂调试器 / 断点不生效 / `launchSettings.json` / `-waitformanageddebugger`
 
 默认建议：
 

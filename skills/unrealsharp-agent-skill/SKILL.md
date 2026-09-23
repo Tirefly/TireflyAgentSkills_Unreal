@@ -1,6 +1,6 @@
 ---
 name: unrealsharp-agent-skill
-description: "Use when working with UnrealSharp in a Unreal Engine 5.6-5.8 project, including UnrealSharp plugin architecture, Script/*.csproj, glue projects under Intermediate/UnrealSharp/UHT, UHT-generated C# bindings, UnrealSharp.Automation build commands, UBT plugin (ubtplugin) glue generation, LoadOrder.json, hot reload, creating C# projects or C# plugins, *.generated.cs, UClass/UProperty/UFunction partial declarations, editor startup hang, or UnrealSharp troubleshooting."
+description: "Use when working with UnrealSharp in a Unreal Engine 5.6-5.8 project, including UnrealSharp plugin architecture, Script/*.csproj, glue projects under Intermediate/UnrealSharp/UHT, UHT-generated C# bindings, UnrealSharp.Automation build commands, UBT plugin (ubtplugin) glue generation, LoadOrder.json, hot reload, creating C# projects or C# plugins, *.generated.cs, UClass/UProperty/UFunction partial declarations, editor startup hang, debugging C# with Rider/Visual Studio/VSCode, launchSettings.json, -waitformanageddebugger, breakpoints not binding, or UnrealSharp troubleshooting."
 ---
 
 # UnrealSharp Agent Skill
@@ -32,6 +32,7 @@ description: "Use when working with UnrealSharp in a Unreal Engine 5.6-5.8 proje
 - 创建新的 C# 项目、C# 插件项目、理解编辑器里的 New C# Project：读 [04-project-and-plugin-creation.md](./references/04-project-and-plugin-creation.md)
 - 排查启动卡住、dotnet task failed、`*.generated.cs` 报错、glue 工程构建失败：读 [05-troubleshooting-and-diagnostics.md](./references/05-troubleshooting-and-diagnostics.md)
 - 需要快速跳转到官方文档或本地高价值入口文件：读 [06-official-links-and-local-entrypoints.md](./references/06-official-links-and-local-entrypoints.md)
+- 挂调试器、断点不生效、局部变量看不了、IDE（Rider/VSCode/VS）配置、`launchSettings.json`、热重载与调试器冲突：读 [07-debugging-and-ide-workflow.md](./references/07-debugging-and-ide-workflow.md)
 
 ## 工作规则
 
@@ -62,3 +63,4 @@ description: "Use when working with UnrealSharp in a Unreal Engine 5.6-5.8 proje
 - **glue 生成挂在 UHT 里**：`UnrealSharpManagedGlue` 是一个 UBT 插件（`.ubtplugin.csproj`），在 C++ 构建的 UHT 阶段导出绑定。
 - 用户 C# 项目通过 `UnrealSharp.Shared.props` 拿到运行时、Analyzer 和 Source Generator 注入。
 - **业务侧的 `[UProperty]` 必须写 `partial`**，`[UClass]` 类型也必须 `partial`——这是生成器合并声明的前提。
+- **日常改代码走热重载，不要开调试器**。要断点时注意：**Development 编辑器下 C# 是按 Release 编译的**（`DotNetSdkUtilities.GetDotNetBuildConfiguration` 把 Development 映射为 Release），局部变量经常看不了，需按 [07-debugging-and-ide-workflow.md](./references/07-debugging-and-ide-workflow.md) 绕开。

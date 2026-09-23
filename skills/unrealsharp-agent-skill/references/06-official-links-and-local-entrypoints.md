@@ -107,3 +107,4 @@
 - 只想回答“这个功能归哪一层”：先看本文件。
 - 只想回答“为什么启动阶段会调 dotnet”：再看 [02-build-generation-and-hot-reload.md](./02-build-generation-and-hot-reload.md)。
 - 只想回答“某个生成错误该先看哪里”：再看 [05-troubleshooting-and-diagnostics.md](./05-troubleshooting-and-diagnostics.md)。
+- 只想回答“怎么挂调试器 / 断点为什么不好使”：再看 [07-debugging-and-ide-workflow.md](./07-debugging-and-ide-workflow.md)。
