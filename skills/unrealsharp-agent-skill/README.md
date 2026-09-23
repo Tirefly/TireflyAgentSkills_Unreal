@@ -1,15 +1,15 @@
 # unrealsharp-agent-skill
 
-一个面向 Agent 的 UnrealSharp 通用 Skill，适用于 UE 5.5 - 5.7 工程。
+一个面向 Agent 的 UnrealSharp 通用 Skill，适用于 UE 5.6 - 5.8 工程。
 
 它主要覆盖这些场景：
 
 - UnrealSharp 插件结构与模块职责
-- `Script/*.csproj`、`*.Glue`、`generated.cs` 的关系
-- `UnrealSharpBuildTool`、`BuildEmitLoadOrder`、热重载与启动链路
+- `Script/*.csproj`、`Intermediate/UnrealSharp/UHT/**` 生成物、`*.generated.cs` 的关系
+- `UnrealSharp.Automation` 构建命令、`LoadOrder.json`、热重载与启动链路
 - 创建 C# 项目或 C# 插件项目
 - `UClass`、`UProperty`、`UFunction` 等 UnrealSharp C# 写法
-- 编辑器启动到 75% 卡住、Glue 编译失败、托管构建报错等排查
+- 编辑器启动卡住、glue 编译失败、托管构建报错等排查
 
 ## 适用对象
 
@@ -37,7 +37,7 @@
 示例：
 
 ```bash
-git submodule add https://github.com/Tirefly/unrealsharp-agent-skill.git .github/skills/unrealsharp-agent-skill
+git submodule add https://github.com/Tirefly/TireflyAgentSkills_Unreal.git .github/skills/unrealsharp-agent-skill
 ```
 
 也可以直接把整个目录拷贝到支持 `SKILL.md` 的 Agent / Copilot / Claude 风格工作流中使用。
@@ -47,10 +47,8 @@ git submodule add https://github.com/Tirefly/unrealsharp-agent-skill.git .github
 当任务涉及以下关键词时，就适合触发这个 Skill：
 
 - `UnrealSharp`
-- `Glue`
-- `generated.cs`
-- `BuildEmitLoadOrder`
-- `UnrealSharpBuildTool`
+- `generated.cs` / glue 工程
+- `UnrealSharp.Automation` / `BuildEmitLoadOrder` / `LoadOrder.json`
 - `Script/*.csproj`
 - UnrealSharp 启动卡住、托管编译失败、C# 暴露规则异常
 
@@ -68,6 +66,11 @@ git submodule add https://github.com/Tirefly/unrealsharp-agent-skill.git .github
 
 - 项目自己的 `Script/` 目录
 - `Plugins/UnrealSharp`
-- 可用的 `.NET SDK`
+- 可用的 .NET SDK（.NET 10.0.5 或更新）
 - 对应 UE 工程的构建日志或报错信息
 
+## 版本基准
+
+本 Skill 的结论基于 UnrealSharp 上游 `main` 分支的一个具体提交（`46e9c2c1`，2026-09-22）实读源码得出，对应 UE 5.6 - 5.8 + .NET 10。
+
+UnrealSharp 迭代较快，本 Skill 描述的是**这一代的结构**：`UnrealSharp.Automation` + UBT 插件式 glue 生成 + `Intermediate/UnrealSharp/UHT` 落盘。若你手上的插件早于或晚于这个结构，请以本地源码为准。
