@@ -1,2 +1,4 @@
 # Auto detect text files and perform LF normalization
-* text=auto
+# eol=lf pins the worktree to LF in-repo, so it does not depend on each
+# machine's core.eol / core.autocrlf.
+* text=auto eol=lf
