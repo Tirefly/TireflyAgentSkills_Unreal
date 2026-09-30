@@ -18,6 +18,7 @@ description: Unreal 项目开发的执行哲学与验证纪律（Tirefly 用户�
 
 - C++ 编译（引擎检测/UBT 路径/项目刷新/编译/失败排查）：`unreal-cpp-compile`。
 - C++ 风格（创建/修改/审查/格式化前）：`unreal-cpp-style`。
+- GameplayTag（域划分/层级/命名/声明位置/改名重定向/引擎机制事实）：`unreal-gameplay-tags`。
 - UnrealSharp（C# 预检流程/诊断链路）：`unrealsharp-agent-skill`。
 
 ## 引擎机制事实（编译失败高发点速查）
@@ -33,8 +34,8 @@ description: Unreal 项目开发的执行哲学与验证纪律（Tirefly 用户�
 - **Tickable 自 tick 到不了 PrePhysics（泵类设施必须挂帧首委托）**：`FTickableGameObject::TickObjects` 位于 `UWorld::Tick` 尾部（LevelTick.cpp，晚于全部 tick 组与 TimerManager）；帧首挂点是 `FWorldDelegates::OnWorldTickStart`（`UWorld::Tick` 开头无条件广播 `(UWorld*, ELevelTick, float)`，每帧每世界一次，进程级静态委托需自行按 World 过滤）。停用 tickable 子系统自 tick 的正确机制是**重写 `GetTickableTickType()` 返回 `ETickableTickType::Never`**——`UTickableWorldSubsystem::Initialize` 会用该返回值调 `SetTickableTickType`（构造期设置会被重注册覆盖）。
 - **ensure 每站点每进程只上报一次（"首次运行才报错/断点"的真因）**：每个 ensure 站点持 `static std::atomic<uint8> bExecuted`，触发时 `exchange(GEnsureResetState)`——值已等于 `GEnsureResetState`（初值 1）时静默返回，既不写日志也不断点。故编辑器会话内**第一次**跑到某 ensure 站点才有完整输出（Error 级约 11 行：ensure 消息 + 4 行 callstack + `EnsureFailed` 重复块），之后重跑同一路径完全静默。相关 CVar：`core.ResetEnsureState`（递增重置状态 → 所有 ensure 站点重新可报，用于复现首次现象）、`core.EnsureBreakEnabled`（默认 true = 附加调试器时断点捕获——即"断点式卡顿"来源）、`core.EnsuresAreErrors`（Error/Warning 级）。**实践结论**：测试装置里"故意触发 ensure"的检查必须**独立成 opt-in 命令**，不混入常规检查命令——否则每次开编辑器首次运行必现红字刷屏 + 断点卡顿（2026-09-16 TCS Task 3 用户实测反馈）。
 - **上一条的泛化（2026-09-21 TCS Task 5 用户实测指出，同一错误复犯）：任何"故意触发失败输出"的检查都必须独立成 opt-in 命令，不止 ensure**——包括**故意触发的 Error/Warning 日志**（如"未登记 id → Error 拒绝"这类拒绝面检查）。判据很简单：**常规验收命令的输出应当是"零红字"**，跑完只看 PASS/FAIL 行；任何以"某条 Error 是预期的"为注解的输出都说明该检查放错了命令。反模式（本次实证）：把"未登记链 → 拒绝"的检查放进主命令，用户每次跑验收都看到 `Error: ... 未登记——拒绝起链`，既像真实缺陷、又让"零红字"这一验收信号失效——**用户会来问"这个红字是什么"，而正确做法是它根本不该出现在常规命令里**。命名约定：主命令 `Tcs.Test.<域>`（零红字）/ 拒绝面 `Tcs.Test.<域>.Reject`（自带屏显声明"红字为预期"）。
-- **原生 GameplayTag（`FNativeGameplayTag`）三条事实（2026-09-21 源码核实 + 跨模块链接实证）**：①**层级由 tag 字符串按 `.` 切分生成**（`GameplayTagsManager.cpp:1250` 的 `AddTagTableRow`），中间节点**自动补齐**——但补出来的父节点**不是"显式 tag"**（影响父标签订阅语义：总线原生订阅当前是精确匹配，拿父 Tag 订不到子 Tag）；②**C++ 常量名与 tag 文本完全解耦**——`UE_DEFINE_GAMEPLAY_TAG(Tag_Anything, "A.B.C")` 产出的 tag 就是 `A.B.C`，**宏的第二实参才是 tag**，常量名叫什么都不影响层级（踩坑现场：常量名 `Tag_TcsEvent_Damage_Hit` 把 `Tcs.Event` 压成一段，读者据此反推出错的层级 `TcsEvent.Damage.Hit`；修法 = 常量名按"点 → 下划线"逐段对应，引擎先例 `Mover_IsOnGround` ↔ `Mover.IsOnGround`）；③**注册是两段式**：静态构造期若 `UGameplayTagsManager` 未创建则只进待注册表（`NativeGameplayTags.cpp:71`），管理器建树时再补注册（`GameplayTagsManager.cpp:642-646`）——故**静态初始化期不得依赖 tag 已可查**（与"静态初始化期零 UObject 触达"同一原理）。
-- **`UE_DECLARE_GAMEPLAY_TAG_EXTERN` 展开为裸 `extern`（无 dllexport）——跨模块引用原生 Tag 变量会 LNK2001**（2026-09-21 TCS Task 6 实测）：引擎宏本体是 `#define UE_DECLARE_GAMEPLAY_TAG_EXTERN(TagName) extern FNativeGameplayTag TagName;`（`NativeGameplayTags.h:31`），**不带 `__declspec(dllexport)`**。故凡"设计意图是供其他模块/宿主使用"的框架 Tag，声明处 MUST 显式加模块导出宏：`extern TCS<模块>_API FNativeGameplayTag Tag_X;`（定义处零改动——定义 TU 见到 dllexport 声明即导出符号，前提是该 TU include 了声明头）。**同一原理适用于任何"公共调用面"的非内联符号**（本次另一例：`FTcsFlowAttributes` 的 `Submit`/`Read` → LNK2019）。判据：该符号**是否被跨模块引用**，不是"现在有没有人用"——设计意图供外部用的，写时就带宏。
+- **原生 GameplayTag 的三条事实（层级按 `.` 切分且父节点非"显式 tag"、常量名与 tag 文本解耦、两段式注册）已迁出本技能 → `unreal-gameplay-tags`（2026-10-01 迁移；原文为 2026-09-21 源码核实）**。tag 的域划分、命名、声明位置、改名重定向与全部引擎机制事实见该技能的 `references/engine-facts.md` 与 `references/authoring.md`；本节不再保留副本（避免双份载体）。
+- **`UE_DECLARE_GAMEPLAY_TAG_EXTERN` 展开为裸 `extern`（无 dllexport）——跨模块引用原生 Tag 变量会 LNK2001**（2026-09-21 TCS Task 6 实测）：引擎宏本体是 `#define UE_DECLARE_GAMEPLAY_TAG_EXTERN(TagName) extern FNativeGameplayTag TagName;`（`NativeGameplayTags.h:31`），**不带 `__declspec(dllexport)`**。故凡"设计意图是供其他模块/宿主使用"的框架 Tag，声明处 MUST 显式加模块导出宏：`extern TCS<模块>_API FNativeGameplayTag Tag_X;`（定义处零改动——定义 TU 见到 dllexport 声明即导出符号，前提是该 TU include 了声明头）。**同一原理适用于任何"公共调用面"的非内联符号**（本次另一例：`FTcsFlowAttributes` 的 `Submit`/`Read` → LNK2019）。判据：该符号**是否被跨模块引用**，不是"现在有没有人用"——设计意图供外部用的，写时就带宏。**tag 专属的声明写法**（手写 `extern <模块>_API FNativeGameplayTag` 的具体形态、常量名逐段对应规则）见 `unreal-gameplay-tags`。
 - **unity build 把同模块多个 `.cpp` 合并为一个翻译单元——匿名命名空间的通用符号名会跨文件相撞**（2026-09-18 TCS plan1 Task 6 首编译实证）：同一模块内多个 `.cpp` 各自定义同名 file-local 辅助函数（`MakeLiteralModifier` / `IsClose` 这类）时，UBT 的 unity 合并会把它们放进同一 TU、`namespace {}` 随之合并 → `error C2084: 函数"`anonymous-namespace'::Xxx"已有主体`，并级联 `C2264/C2660`。**症状误导性极强**：报错位置落在**先定义该符号的那个文件**（往往是本次没改的旧文件），照报错方向查会一路查错。实践结论：①同模块内跨 `.cpp` 的 file-local 符号一律带**文件/装置前缀**（`MakeAcceptanceLiteralModifier` 而非 `MakeLiteralModifier`），哪怕当前只有一处定义；②看到 C2084/C2264"已有主体 / 函数定义或声明中有错误"落在"自己这次没改的文件"里，**第一反应应是 unity 合并撞名**，而非该文件本身坏了；③`Private/Testing/` 这类多装置同居一目录的场景最易踩（多个装置各自的便捷件重名）。
 
 **以下为 2026-09-16 从 TAH 卡（MEM-20260821-02 / MEM-20260822-02）迁入的反射与布局事实**（原卡保留环境/流程部分；枚举 `//` 注释与 UMETA ToolTip 冲突一条本已在册，未重复）：
@@ -69,7 +70,7 @@ description: Unreal 项目开发的执行哲学与验证纪律（Tirefly 用户�
 
 - **任何实质性任务开始时，先调用 `harness-router` 技能**，再探索文件或提出澄清问题；任务类型中途切换（如设计讨论 → Unreal 开发）需为新类型重跑。
 - **每次最终回答前做「回答后 TAH 判定」自检**：命中触发条件（产出交付物 / 失败后重试成功 / 用户纠正了 agent 判断 / 高影响决策 / 长任务将尽且存在未关闭检查点）→ 加载 `harness-retro` 并**用 `ask_user_question` 提议**（纯文本提议会被自动轮湮没）；同时检查检查点纪律（约每 5 轮实质交流或 `checkpoint: true` 边界）。未命中则静默跳过，不提及。
-- **记忆写入只走 `harness-retro` 门控**，绝不自动写卡；载体判据：引擎机制事实入本技能、美学/格式约定入 `unreal-cpp-style`、事件教训入 TAH 卡（见 MEM-20260910-02）。
+- **记忆写入只走 `harness-retro` 门控**，绝不自动写卡；载体判据（2026-10-01 扩为三载体）：**引擎机制事实与跨模块通用原理**入本技能、**专属横切体系的规范与机制事实**入其专属技能（如 GameplayTag → `unreal-gameplay-tags`）、**美学/格式约定**入 `unreal-cpp-style`、**事件教训**入 TAH 卡（见 MEM-20260910-02）。判据一句话：**同一主题只允许一个载体，别的地方放指针。**
 
 ## 适用时机
 

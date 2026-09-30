@@ -256,6 +256,8 @@ WITH_EDITORONLY_DATA：`Name`（链接时状态名，报错用）/ `ID`（FGuid�
 > 3. 依赖"精确匹配"假设的宿主必须用父/子 Tag 设计自行保证语义。
 >
 > 另一静默坑：状态参数或目标被绑定时编译器把 `bCanOverrideLinkedAssetAtRuntime` 置 false，覆盖不生效且**无报错**【源码 EM\Private\StateTreeCompiler.cpp L935-951、RM\Private\StateTreeExecutionContext.cpp L7142-7143】——LinkedAsset 模板 + 参数覆盖场景优先用 `FStateTreeReference` 的参数覆盖而不是绑定向导。
+>
+> **tag 匹配语义的通用规则**（`MatchesTag` vs `MatchesTagExact`、父节点为按 `.` 切分自动补齐的隐式节点及其订阅后果）见 `unreal-gameplay-tags` 的 `references/engine-facts.md`「父节点语义」；本条只保留 StateTree 侧的特例，不复制通用规则。
 
 ## 6. FStateTreeReference 参数化引用
 
