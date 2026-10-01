@@ -6,12 +6,15 @@
 
 ### 词表设计
 
-- [ ] 每个 tag 段数 ≤ 4
-- [ ] 段 2（域）能用"**哪个子系统解析它**"一句话回答
+- [ ] 每个 tag 段数 ≤ 4（且第 4 段是余量，不是现状）
+- [ ] **根段能用"哪个子系统解析它"一句话回答**
+- [ ] **一个根只承载一个角色**（同一机制的两个角色没有被塞进一个根里用子段兼收）
+- [ ] **根名唯一指向一个消费场景**；不唯一时已加限定词
+- [ ] **新建根前查过根段注册表**
 - [ ] 每段 PascalCase，无下划线，纯 ASCII
 - [ ] 路径里没有生命周期 / 优先级 / 状态 / 开发阶段段
-- [ ] 临时验证词全在 `Probe` 域内，且 `DevComment` 写了**退役判据**
-- [ ] 新增顶层域了吗？如果新增，理由是"出现了新的消费角色"（不是"内容变多了"）
+- [ ] 临时验证词全在 `Probe` 根下、机制名压成一段，且 `DevComment` 写了**退役判据**
+- [ ] 新增根了吗？如果新增，理由是"出现了新的消费角色"（不是"内容变多了"）
 
 ### 声明与写法
 
@@ -33,7 +36,11 @@
 ## 校验脚本
 
 ```powershell
-pwsh -File scripts/Validate-GameplayTags.ps1 -ProjectRoot <项目根> -Namespace <根前缀>
+# 多根项目（本规范的常规形态）：传根清单
+pwsh -File scripts/Validate-GameplayTags.ps1 -ProjectRoot <项目根> -Roots <根1>,<根2>,<根3>
+
+# 单根项目（单一前缀命名空间）：传前缀
+pwsh -File scripts/Validate-GameplayTags.ps1 -ProjectRoot <项目根> -Namespace <前缀>
 ```
 
 只读、零副作用。扫描源：`Config/DefaultGameplayTags.ini`、`Config/Tags/**/*.ini`、`Source/**` 与 `Plugins/**/Source/**` 下的 `*.h` / `*.cpp`。
@@ -47,7 +54,7 @@ pwsh -File scripts/Validate-GameplayTags.ps1 -ProjectRoot <项目根> -Namespace
 | 3 | 非 ASCII 字符 | Error |
 | 4 | 引擎硬非法字符（`"` `'` `,` 与空白） | Error |
 | 5 | 空段（连续点 / 首尾点） | Error |
-| 6 | 首段与 `-Namespace` 不符 | Error |
+| 6 | 首段不在根清单内（`-Roots` / `-Namespace`） | Error |
 | 7 | 生命周期类段出现在段 3 及之后（`-ForbiddenSegments`） | Error |
 | 8 | ini 词缺 `DevComment` | Warning |
 | 9 | **同一 tag 文本多处声明** | Error |
@@ -59,8 +66,9 @@ pwsh -File scripts/Validate-GameplayTags.ps1 -ProjectRoot <项目根> -Namespace
 
 ### 脚本查不出来的（必须人工）
 
-- 域的判据是否成立（"哪个子系统解析它"）——只能人答
-- 一个词该归哪个域
+- 根的判据是否成立（"哪个子系统解析它"）——只能人答
+- 一个词该归哪个根
+- 根名是否真的唯一指向一个消费场景（脚本只查清单，不查语义）
 - `DevComment` 的内容是否真实有用
 - `Probe` 词的退役判据是否合理
 - **隐式父节点造成的静默降级**（叶子末段写漏会解析到自动补齐的父节点，见 [engine-facts.md](engine-facts.md)）——需要把"应存在的显式 tag 清单"与解析结果对比，脚本当前不做
@@ -69,9 +77,9 @@ pwsh -File scripts/Validate-GameplayTags.ps1 -ProjectRoot <项目根> -Namespace
 
 以下变更属**结构性**，按项目的契约层流程先提案后实现（本项目主仓以 OpenSpec 为契约层）：
 
-- 新增/删除**顶层域**
-- 改变域名、子域名，或改动已有 tag 文本（改名）
-- 批量退役 `Probe` 域内容
+- 新增/删除**根**
+- 改变根名、子域名，或改动已有 tag 文本（改名）
+- 批量退役 `Probe` 根内容
 - 改变声明位置分类的边界（如把某类词从 ini 迁到原生）
 
 以下变更**不需要**提案，直接做：

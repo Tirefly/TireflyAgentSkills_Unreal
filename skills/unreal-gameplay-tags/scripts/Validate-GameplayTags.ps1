@@ -15,14 +15,18 @@
 .PARAMETER ProjectRoot
 	Unreal 项目根目录（含 .uproject 的那一层）。
 
+.PARAMETER Roots
+	允许的根段清单（tag 首段）。多根项目用这个——按规范"一个根一个消费角色"，常规形态是多个根。
+	与 -Namespace 二选一；两者都给时 -Roots 优先。两者都不给则不检查首段。
+
 .PARAMETER Namespace
-	期望的根命名空间（tag 首段）。留空则不检查首段。
+	单一根前缀（tag 首段）。仅适用于"整个项目共用一个前缀"的单根项目；多根项目请用 -Roots。
 
 .PARAMETER MaxDepth
 	段数上限，默认 4。
 
 .PARAMETER ProbeDomain
-	允许作为顶层域的生命周期类域名，默认 Probe。该名出现在段 1 时不算违规，出现在段 2 及之后算违规。
+	允许作为根段的生命周期类名，默认 Probe。该名出现在段 1 时不算违规，出现在段 2 及之后算违规。
 
 .PARAMETER ForbiddenSegments
 	不得作为层级段的词（生命周期/阶段类）。默认见参数声明。
@@ -32,6 +36,9 @@
 
 .PARAMETER SkipNativeScan
 	不扫描 C++ 原生声明。
+
+.EXAMPLE
+	pwsh -File Validate-GameplayTags.ps1 -ProjectRoot E:\Projects_Dev\MyGame -Roots TcsEvent,DamageFlowKey,Attribute
 
 .EXAMPLE
 	pwsh -File Validate-GameplayTags.ps1 -ProjectRoot E:\Projects_Dev\MyGame -Namespace Tcs
@@ -46,6 +53,8 @@ param(
 	[string]$ProjectRoot,
 
 	[string]$Namespace = '',
+
+	[string[]]$Roots = @(),
 
 	[int]$MaxDepth = 4,
 
@@ -366,12 +375,22 @@ foreach ($record in $TagRecords)
 		}
 	}
 
-	# 6 命名空间
-	if (-not [string]::IsNullOrEmpty($Namespace) -and $segments.Count -gt 1)
+	# 6 根段（多根清单优先；单根前缀作简写）
+	if ($segments.Count -gt 1)
 	{
-		if ($segments[0] -ne $Namespace)
+		if ($Roots.Count -gt 0)
 		{
-			Add-Issue Error 'D6-命名空间不符' $tag "首段 '$($segments[0])' 与约定 '$Namespace' 不符" $location
+			if ($segments[0] -notin $Roots)
+			{
+				Add-Issue Error 'D6-根段不在清单' $tag "首段 '$($segments[0])' 不在根清单（$($Roots -join ' / ')）内" $location
+			}
+		}
+		elseif (-not [string]::IsNullOrEmpty($Namespace))
+		{
+			if ($segments[0] -ne $Namespace)
+			{
+				Add-Issue Error 'D6-命名空间不符' $tag "首段 '$($segments[0])' 与约定 '$Namespace' 不符" $location
+			}
 		}
 	}
 
@@ -390,7 +409,7 @@ foreach ($record in $TagRecords)
 			continue
 		}
 
-		Add-Issue Error 'D7-生命周期段入路径' $tag "段 $($i + 1) '$segment' 是生命周期/阶段维度，不得作层级段（临时词应落 $ProbeDomain 域）" $location
+		Add-Issue Error 'D7-生命周期段入路径' $tag "段 $($i + 1) '$segment' 是生命周期/阶段维度，不得作层级段（临时词应落 $ProbeDomain 根）" $location
 	}
 
 	# 8 ini 词缺 DevComment
@@ -482,7 +501,7 @@ foreach ($level in @('Error', 'Warning', 'Info'))
 
 Write-Host ("合计：Error $($errors.Count) / Warning $($warnings.Count) / Info $($infos.Count)") -ForegroundColor $(if ($errors.Count -gt 0) { 'Red' } else { 'Green' })
 Write-Host ''
-Write-Host '脚本查不出的项（必须人工）：域判据是否成立、词归哪个域、DevComment 内容是否真实、Probe 退役判据是否合理、隐式父节点造成的静默降级。' -ForegroundColor DarkGray
+Write-Host '脚本查不出的项（必须人工）：根判据是否成立、词归哪个根、根名是否唯一指向一个消费场景、DevComment 内容是否真实、Probe 退役判据是否合理、隐式父节点造成的静默降级。' -ForegroundColor DarkGray
 
 if ($errors.Count -gt 0)
 {

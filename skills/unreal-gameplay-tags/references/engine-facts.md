@@ -62,8 +62,8 @@ if (UGameplayTagsManager* Manager = UGameplayTagsManager::GetIfAllocated())
 **"拼错即报错"的真实边界（重要坑）**：`RequestGameplayTag(..., ErrorIfNotFound=true)` 的 ensure **只在词完全不存在时**触发。但**中间节点会被自动补齐**（见下），所以**把叶子词的末段写漏，会成功解析到一个"隐式父节点"**——不报错、静默降级。
 
 ```text
-已声明:  <Ns>.<域>.Damage.Physical
-拼成:    <Ns>.<域>.Damage          ← 解析成功（隐式父节点），零告警
+已声明:  <根>.<子域>.Damage.Physical
+拼成:    <根>.<子域>.Damage          ← 解析成功（隐式父节点），零告警
 ```
 
 ⇒ 校验脚本要能区分"显式声明"与"隐式父节点"，否则这个降级面查不出来。

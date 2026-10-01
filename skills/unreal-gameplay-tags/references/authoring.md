@@ -11,7 +11,7 @@
 | **契约词** | 框架对外广播/约定的词（事件名、对外契约键名） | **框架代码原生声明** | 跨模块消费者需要**编译期常量**；且契约词由宿主配置 ⇒ 宿主漏配即静默破坏框架广播面与订阅面的对应关系 |
 | **框架默认内容** | 框架自带的内容实例（默认模板等） | **框架代码原生声明** | 漏配不可能发生。ini / DataTable 都可能漏（未 cook、未合并、被覆盖），原生不会 |
 | **宿主内容** | 由项目内容规定含义的词（具体 id、属性名等） | **项目侧 ini**（`Config/DefaultGameplayTags.ini`） | 内容归宿主，编辑器可增删、不需重编译 |
-| **验证词** | 仅被验证装置消费 | **`<Ns>.Probe.*` 域** + 非 Shipping 消费路径 | 见 [taxonomy.md](taxonomy.md)「临时验证词」 |
+| **验证词** | 仅被验证装置消费 | **`Probe.*` 根** + 非 Shipping 消费路径 | 见 [taxonomy.md](taxonomy.md)「临时验证词」 |
 
 > **不是判据的两种说法**（避免踩）：
 > - ❌ "框架语义 vs 项目内容"——边界词争不清（"生命值"是框架概念还是项目内容？），最终还得回落到"代码怎么引用它"。
@@ -61,10 +61,10 @@ ini / Restricted 侧的冲突则由编辑器标记（`GT/Private/GameplayTagsMan
 
 ```cpp
 // 公开头里（不能用 UE_DECLARE_GAMEPLAY_TAG_EXTERN）
-extern TCSXXX_API FNativeGameplayTag Tag_<Ns>_<域>_<词>;
+extern TCSXXX_API FNativeGameplayTag Tag_<根>_<子域>_<词>;
 
 // 私有 .cpp 里零改动
-UE_DEFINE_GAMEPLAY_TAG(Tag_<Ns>_<域>_<词>, "<Ns>.<域>.<词>");
+UE_DEFINE_GAMEPLAY_TAG(Tag_<根>_<子域>_<词>, "<根>.<子域>.<词>");
 ```
 
 定义处无需再写导出宏——定义 TU 见到 `dllexport` 声明即导出符号（前提是该 TU include 了声明头）。判据是"**设计意图是否供外部用**"，不是"现在有没有人用"。
@@ -76,9 +76,9 @@ UE_DEFINE_GAMEPLAY_TAG(Tag_<Ns>_<域>_<词>, "<Ns>.<域>.<词>");
 **常量名 = tag 文本按"点 → 下划线"逐段转换（MUST）**：
 
 ```cpp
-// tag 文本            <Ns>.Flow.Key.BaseDamage
-// 常量名              Tag_<Ns>_Flow_Key_BaseDamage
-UE_DEFINE_GAMEPLAY_TAG(Tag_<Ns>_Flow_Key_BaseDamage, "<Ns>.Flow.Key.BaseDamage");
+// tag 文本            <机制>Key.<子域>.<词>
+// 常量名              Tag_<机制>Key_<子域>_<词>
+UE_DEFINE_GAMEPLAY_TAG(Tag_<机制>Key_<子域>_<词>, "<机制>Key.<子域>.<词>");
 ```
 
 **宏的第二实参才是 tag 文本**，常量名叫什么都不影响层级——所以常量名可以骗人。这正是"段内禁下划线"（[taxonomy.md](taxonomy.md)）的配套规则：段内一旦有下划线，逐段对应关系就不可反推。引擎先例：`Mover.IsOnGround` ↔ `Mover_IsOnGround`。
@@ -90,7 +90,7 @@ UE_DEFINE_GAMEPLAY_TAG(Tag_<Ns>_Flow_Key_BaseDamage, "<Ns>.Flow.Key.BaseDamage")
 项目词表住 `<Project>/Config/DefaultGameplayTags.ini` 的 `[/Script/GameplayTags.GameplayTagsSettings]` 节：
 
 ```ini
-+GameplayTagList=(Tag="<Ns>.<域>.<词>",DevComment="语义 / 归属 / 退役判据")
++GameplayTagList=(Tag="<根>.<子域>.<词>",DevComment="语义 / 归属 / 退役判据")
 ```
 
 编辑器内可直接改本文件，或用 Project Settings → GameplayTags 面板增删（面板写回本文件）。ini 相对 DataTable 的优势是**文本可合并、无需独占签出**（`GT/Classes/GameplayTagsSettings.h:88-101` 类注释）。
@@ -136,7 +136,7 @@ UE_DEFINE_GAMEPLAY_TAG(Tag_<Ns>_Flow_Key_BaseDamage, "<Ns>.Flow.Key.BaseDamage")
 | 不同 source 声明同一显式 tag → 编辑器标记冲突 | `GT/Private/GameplayTagsManager.cpp:1357-1389` |
 | 受限源先于其他源进树 | `:620-632` |
 
-**用法**：把顶层域做成受限 tag（Owner = 少数人），`bAllowNonRestrictedChildren = true` 让开发者在域下自由加词 ⇒ **域层受控、子层自由**，且是纯文本 ini、diff 友好。
+**用法**：把一个根做成受限 tag（Owner = 少数人），`bAllowNonRestrictedChildren = true` 让开发者在它下面自由加词 ⇒ **根层受控、子层自由**，且是纯文本 ini、diff 友好。
 
 ### 三条硬边界（2026-10-01 实证补记，踩过才知道）
 
@@ -164,7 +164,7 @@ UE_DEFINE_GAMEPLAY_TAG(Tag_<Ns>_Flow_Key_BaseDamage, "<Ns>.Flow.Key.BaseDamage")
 
 ```ini
 ; 声明处（注意下面的位置警告）
-+GameplayTagRedirects=(OldTagName="<Ns>.<域>.<旧词>",NewTagName="<Ns>.<域>.<新词>")
++GameplayTagRedirects=(OldTagName="<根>.<子域>.<旧词>",NewTagName="<根>.<子域>.<新词>")
 ```
 
 结构体 `FGameplayTagRedirect{OldTagName, NewTagName}`（`GT/Public/GameplayTagRedirectors.h:19`/`:27`/`:30`）；ini 键解析在 `GT/Private/GameplayTagRedirectors.cpp:32-45`。
