@@ -138,6 +138,22 @@ UE_DEFINE_GAMEPLAY_TAG(Tag_<Ns>_Flow_Key_BaseDamage, "<Ns>.Flow.Key.BaseDamage")
 
 **用法**：把顶层域做成受限 tag（Owner = 少数人），`bAllowNonRestrictedChildren = true` 让开发者在域下自由加词 ⇒ **域层受控、子层自由**，且是纯文本 ini、diff 友好。
 
+### 三条硬边界（2026-10-01 实证补记，踩过才知道）
+
+**① 受限行本身就是一次声明——不能用它"标注"别人的词。**
+受限行经 `AddRestrictedGameplayTagSource` → `AddTagTableRow(..., true)` 进树，与其他源一样是**显式声明**。若该 tag 文本已被别处显式声明过（例如某个**原生 tag**），就是**重复声明**：引擎侧标冲突（`GT/Private/GameplayTagsManager.cpp:1509` 起，注释原文 *"If the existing tag is restricted we have a conflict. This is explicitly not allowed."*），校验脚本侧报 `A5-重复声明`（Error）。
+⇒ 想把"某个词"标为受限，前提是那个词**此前没人显式声明过**。
+
+**② UE 5.8 里原生 tag 物理上无法受限。**
+`AddTagTableRow` 的第三参默认 `false`（`GT/Classes/GameplayTagsManager.h:903`），全库**唯一**传 `true` 的调用点是 `GameplayTagsManager.cpp:554`（受限 ini 加载路径）；四条原生路径 `:639` / `:645` / `:2621` / `:2634` **全部走 2 参**。`FNativeGameplayTag` / `UE_DEFINE_GAMEPLAY_TAG` 也没有任何受限入口。
+⇒ **受限机制只能施加于 ini 声明的词。** 面对一批原生 tag，你唯一能设限的是它们**共同走过的隐式父节点**（例如 `Ns.Event` / `Ns.Flow.Key`——这些层级段没被任何人显式声明过，写上不算重复）。
+
+**③ 拦截只在"显式声明过的祖先"上生效。**
+编辑器的向上查找条件是 `IsDictionaryTag(AncestorTag)`（`GameplayTagsEditorModule.cpp:473`），而该 API 对**隐式父段返回 false**（`GameplayTagsManager.h:725` 原文：*"false for implicitly added parent tags"*）。
+⇒ 设限时**必须把那个节点本身写成显式受限行**，否则 `bAllowNonRestrictedChildren=false` 写了也不生效（查找会直接跳过它）。
+
+**推论（选型前先问）**：若一个命名空间里的词全部是原生声明的，且宿主/其他模块**有正当理由往它下面加自己的词**，那么受限机制在这里**无适用面**——节点档挡的是正当扩展，叶档物理不可用。此时对症的强制层是"归属规则（契约）+ 重复声明校验（脚本）"，而不是受限 tag。
+
 **注意实施边界**：约束与冲突标记主要在**编辑器期**（`#if WITH_EDITORONLY_DATA`），标志位序列化供查询——它是**作者期治理**，不是运行时硬阻断。**审批本身走版本控制 + Code Review（+ 项目的契约层提案流程），不要在引擎里造第二套审批。**
 
 **`bAllowNonRestrictedChildren` 的默认值是 `false`**（`GT/Classes/GameplayTagsManager.h:73`）——不显式打开就会禁止所有子 tag，这是最容易踩的一点。
