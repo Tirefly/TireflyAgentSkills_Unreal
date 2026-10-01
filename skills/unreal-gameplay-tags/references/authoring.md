@@ -163,20 +163,44 @@ UE_DEFINE_GAMEPLAY_TAG(Tag_<机制>Key_<子域>_<词>, "<机制>Key.<子域>.<�
 **改名一律登记 `FGameplayTagRedirect`（MUST）。**
 
 ```ini
-; 声明处（注意下面的位置警告）
 +GameplayTagRedirects=(OldTagName="<根>.<子域>.<旧词>",NewTagName="<根>.<子域>.<新词>")
 ```
 
 结构体 `FGameplayTagRedirect{OldTagName, NewTagName}`（`GT/Public/GameplayTagRedirectors.h:19`/`:27`/`:30`）；ini 键解析在 `GT/Private/GameplayTagRedirectors.cpp:32-45`。
 
-**两条已核实的约束**：
+### 写到哪里（2026-10-01 取证定论，取代此前的"位置警告"）
 
-1. **同一 old tag 不得重定向到多个 new tag**——引擎 `ensureMsgf`（`GT/Private/GameplayTagRedirectors.cpp:153`）
-2. **支持链式重定向**（`:120-129` 循环跟随 `NewTagName`），但链越长越难维护
+引擎自己的改名流程给出的规则在 `GameplayTagsEditorModule.cpp:925`：
 
-> ⚠️ **位置警告（未完全定论，落笔前必须再核实）**：`GT/Private/GameplayTagRedirectors.cpp:56` 会对写在某处 ini 里的重定向打 **Error** 级日志：
-> `"GameplayTagRedirects is in a deprecated location, after editing GameplayTags developer settings you must remove these manually"`
-> 即**存在一个"已弃用位置"**。落笔前先在本机确认当前受支持的位置（Project Settings → GameplayTags 面板写入的位置），不要照抄本条示例的 ini 节位置。
+```cpp
+UGameplayTagsList* ListToUpdate = (OldTagSource && OldTagSource->SourceTagList)
+    ? OldTagSource->SourceTagList.Get()
+    : GetMutableDefault<UGameplayTagsSettings>();
+ListToUpdate->GameplayTagRedirects.AddUnique(Redirect);
+```
+
+> **规则：redirect 写进"该 tag 所属列表所在的那个配置文件"。**
+
+| 词的来源 | 写到哪 | ini 节名 |
+|---|---|---|
+| **原生 tag**（没有 TagList 源 → 走回落分支） | 项目 `Config/DefaultGameplayTags.ini` | `[/Script/GameplayTags.GameplayTagsSettings]` |
+| `DefaultGameplayTags.ini` 里 `+GameplayTagList` 声明的词 | 同文件 | `[/Script/GameplayTags.GameplayTagsSettings]` |
+| `Config/Tags/*.ini` 里声明的词 | **声明它的那个文件** | `[/Script/GameplayTags.GameplayTagsList]` |
+
+类继承支撑：`UGameplayTagsSettings : public UGameplayTagsList`（`GT/Classes/GameplayTagsSettings.h:102-103`），而 `GameplayTagRedirects` 定义在基类 `UGameplayTagsList` 上（`:33-34`、`:44`）——所以两个节名都有这个数组。
+
+读取侧共三处（`GT/Private/GameplayTagRedirectors.cpp:76-94`）：① `GetDefault<UGameplayTagsSettings>()->GameplayTagRedirects`；② 所有 `EGameplayTagSourceType::TagList` 源各自的 `GameplayTagRedirects`；③ 下面那条已弃用路径。
+
+**已弃用位置（会打 Error 级日志，MUST NOT 使用）**：`DefaultEngine.ini` 的 `[/Script/Engine.Engine]` → `+GameplayTagRedirects=(...)`，命中即报
+
+> `"GameplayTagRedirects is in a deprecated location, after editing GameplayTags developer settings you must remove these manually"` —— `:56`
+
+引擎自己还在 `GameplayTagsEditorModule.cpp:271` 主动删这个位置的键（`GConfig->RemoveKeyFromSection(TEXT("/Script/Engine.Engine"), "+GameplayTagRedirects", ...)`）——即把"迁移到 settings"当成清理动作。
+
+### 两条行为约束（`AddRedirects` 内，`:107-156`）
+
+1. **同一 `OldTagName` 不得重定向到多个 `NewTagName`**——命中即 `ensureMsgf`（`:153`，原文 *"Old tag is being redirected to more than one tag"*）⇒ 批量改名时 `OldTagName` 必须唯一，且**同一批 redirect 不要同时出现在两个位置**（那会直接触发这条 ensure）
+2. **多跳会被压平成单跳**——`:117-146` 循环跟随 `NewTagName`（10 次迭代保护），A→B→C 最终只登记 A→C ⇒ **直接写终态目标，不要链式重定向**（链式只增加维护面，不增加能力）
 
 **为什么必须重定向**：改名后，**已经序列化进资产/蓝图/DataTable 的旧 tag 引用**不会自动跟着改。重定向让旧名在加载时解析到新名。不登记的话，这些引用靠 `WarnOnInvalidTags`（见 [engine-facts.md](engine-facts.md)）告警暴露，但已经丢失。
 

@@ -28,7 +28,7 @@
 
 ### 变更安全
 
-- [ ] 改名都登记了 `FGameplayTagRedirect`（且先核实了受支持的位置，见 [authoring.md](authoring.md) 的位置警告）
+- [ ] 改名都登记了 `FGameplayTagRedirect`，且写在**该 tag 所属列表所在的配置文件**里（原生 tag → `DefaultGameplayTags.ini` 的 `[/Script/GameplayTags.GameplayTagsSettings]`；`Config/Tags/*.ini` 的词 → 声明它的那个文件的 `[/Script/GameplayTags.GameplayTagsList]`）；`OldTagName` 唯一、无链式；**没有**落在已弃用位置 `DefaultEngine.ini` 的 `[/Script/Engine.Engine]`（见 [authoring.md](authoring.md)「写到哪里」）
 - [ ] 删除后跑过一遍全内容加载，`WarnOnInvalidTags` 零 Warning
 - [ ] 消费者未落在"tag 表加载之前"的时机（静态初始化 / `StartupModule`）
 - [ ] 热路径没有逐次 `RequestGameplayTag`

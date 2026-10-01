@@ -121,7 +121,7 @@ tag 专属的写法规则（手写模块导出宏）在 [authoring.md](authoring
 4. 中间节点是否仍 `bIsExplicitTag = false`（`GameplayTagsManager.cpp:1317`）
 5. `InvalidTagCharacters` 默认值（`GameplayTagsSettings.cpp:70`）
 6. `RequestGameplayTag` 是否仍加锁（`GameplayTagsManager.cpp:2378`）
-7. `FGameplayTagRedirect` 的"已弃用位置"警告是否变化（`GameplayTagRedirectors.cpp:56`）
+7. `FGameplayTagRedirect` 的两处读取源与代码路径是否变化（`GameplayTagRedirectors.cpp:76-94`：`UGameplayTagsSettings` 的数组 + 各 `TagList` 源各自的数组）；以及"已弃用位置"是否仍是 `DefaultEngine.ini` 的 `[/Script/Engine.Engine]`（`:26-57`）。**5.8 基线已定论**，见 [authoring.md](authoring.md)「写到哪里」
 8. `FRestrictedGameplayTagTableRow::bAllowNonRestrictedChildren` 默认值是否仍为 `false`（`GameplayTagsManager.h:73`）
 9. `GameplayTagTableList` 的异步加载分支（`GameplayTagsManager.cpp:385-396`）
 10. 各类配置键是否改名：`ImportTagsFromConfig` / `WarnOnInvalidTags` / `RestrictedConfigFiles` / `GameplayTagTableList` / `CategoryRemapping` / `GameplayTagRedirects`
