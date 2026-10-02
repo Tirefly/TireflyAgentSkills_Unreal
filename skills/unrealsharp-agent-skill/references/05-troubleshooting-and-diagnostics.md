@@ -123,6 +123,8 @@ glue 生成挂在 UHT 里，所以 Editor 目标构建就是重新导出的入�
 & "[EngineRoot]\Engine\Build\BatchFiles\Build.bat" [ProjectName]Editor Win64 Development -Project="[ProjectPath]\[ProjectName].uproject" -WaitMutex -NoHotReloadFromIDE
 ```
 
+> **注意**：Editor 目标构建会重导 glue，但**只重导"自己脏了"的那些模块**——给**别的模块**会实现的接口加方法时，实现模块不会被动重导，表现为 `CS0535`。见「案例 4」。
+
 ### 复现启动阶段托管构建
 
 > 占位符：`[EngineRoot]` 指引擎安装根目录（其下有 `Engine\` 子目录）。
@@ -251,6 +253,50 @@ Most likely, the bindings library failed to build due to invalid generated glue.
 ```
 
 这个才是真正的“glue 编译失败”信号，指向案例 1/2 的排查路径。
+
+### 案例 4：改了 C++ 接口后，**别的模块**里的实现类报 `CS0535`
+
+**症状**：给一个 C++ `UINTERFACE` 加了 `BlueprintNativeEvent` 方法，重新构建时报：
+
+```
+<ImplementingClass>.generated.cs(34,82): error CS0535:
+  "<ImplClass>"不实现接口成员"<IInterface>.<NewMethod>(...)"
+```
+
+报错文件在 `Intermediate/UnrealSharp/UHT/**` 下（生成物），而且**接口本身已经刷新**——`<IInterface>.generated.cs` 里新方法**在**，只有**实现类的镜像不在**。第一反应容易怀疑生成器有 bug，其实不是。
+
+**根因**：UnrealSharp 的 glue 导出**按"声明该类型的模块"判脏**，没有沿"实现了哪个接口"建立反向依赖边。所以当**接口的声明模块**与**实现类的所在模块**不是同一个时：
+
+- 接口模块脏了 ⇒ 接口胶水重写（新方法有了）
+- 实现类所在模块没脏 ⇒ 它的镜像 `*.generated.cs` **保持旧内容**（缺新方法）
+- ⇒ C# 侧那个镜像类声明了 `: IInterface`，却少实现成员 ⇒ `CS0535`
+
+**判别（一眼分辨"陈旧"还是"生成器有 bug"）**：比对两个文件的 mtime，再数一下成员：
+
+```powershell
+Get-Item "[ProjectPath]\Intermediate\UnrealSharp\UHT\Editor\[InterfaceModule]\[IInterface].generated.cs" | Select-Object LastWriteTime
+Get-Item "[ProjectPath]\Intermediate\UnrealSharp\UHT\Editor\[ImplModule]\[ImplClass].generated.cs"   | Select-Object LastWriteTime
+```
+
+接口胶水是**本次构建**的时间、实现类镜像是**旧日期** ⇒ 陈旧，不是 bug。再 grep 镜像里缺哪个成员即可确认。
+
+**处置**：**不要手改生成物**，只要让**实现类所在模块重新导出**。任选其一：
+
+- **最小**：把该模块的**任一源文件 mtime 触碰一下**——内容零改动，`git status` 保持干净：
+
+```powershell
+(Get-Item "[ProjectPath]\Source\[ImplModule]\Public\...\X.h").LastWriteTime = Get-Date
+```
+
+- 或清理重建该模块 / 全项目的 `Intermediate`。
+
+**边界（别把结论放大）**：
+
+- **纯 C++ 宿主不受影响**——没有 glue 镜像这回事。
+- **只在增量构建下发生**；`Intermediate` 被清过、或 fresh clone 的机器**本来就不会踩到**（全量重导）。
+- 所以这是**构建层的增量假设失效**，不是 C++ 反射契约的问题：宿主**源码**确实零改动——对外表述宜写成「宿主源码零适配；UnrealSharp 宿主需重导实现模块的 glue」，别写成"什么都不用做"。
+
+**预防**：给**别的模块**会实现的接口加方法时，顺手把实现模块也 dirty 一下，不要指望 UHT 会替你把这条依赖拉过来。
 
 ## 哪些日志是非阻塞的
 
