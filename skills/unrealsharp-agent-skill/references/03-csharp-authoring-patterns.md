@@ -167,6 +167,7 @@ UnrealSharp 不是把 `UCLASS`、`UPROPERTY`、`UFUNCTION` 这些宏原样搬到
 - 使用 `[UClass]` 暴露类，通过 `ClassFlags` 和 `config` 参数补充类级语义。
 - 必须写成 `partial class`。
 - Actor 类名保持 `A` 前缀，非 Actor 的 UObject 类保持 `U` 前缀。
+- **C++/工具侧按类找 C# 类型时 MUST 用基类判据（`IsChildOf`），MUST NOT 按 `EngineName` 精确匹配**——托管类的 C++ 侧 `UClass` 名带 **BP 生成后缀 `_C`**（`GetAdjustedFieldName` 命名的是 Blueprint，不是类）。诊断与修法见 [05-troubleshooting-and-diagnostics.md](./05-troubleshooting-and-diagnostics.md) 案例 5。
 
 ```csharp
 [UClass]

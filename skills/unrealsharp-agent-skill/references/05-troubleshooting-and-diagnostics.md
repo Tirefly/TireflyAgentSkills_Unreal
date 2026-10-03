@@ -298,6 +298,37 @@ Get-Item "[ProjectPath]\Intermediate\UnrealSharp\UHT\Editor\[ImplModule]\[ImplCl
 
 **预防**：给**别的模块**会实现的接口加方法时，顺手把实现模块也 dirty 一下，不要指望 UHT 会替你把这条依赖拉过来。
 
+### 案例 5：按类名找托管类失败——**UClass 名带 BP 生成后缀 `_C`**
+
+**症状**：C++ 侧（或编辑器工具、控制台命令）按名字查找某个 C# 类型，报"**未找到类 `XxxYyy`**"，而日志显示该类**早已注册成功**：
+
+```
+LogBlueprint: Compiling Blueprint '/Script/<Assembly>.XxxYyy'
+```
+
+**根因**：UnrealSharp 的托管类型是**蓝图生成类**（`UCSClass` 的 `ClassGeneratedBy` 非空）。`UCSManagedTypeCompiler::CreateField` 用
+`FCSMetaDataUtils::GetAdjustedFieldName` 生成名字（`Source/UnrealSharpCore/Private/Utilities/CSMetaDataUtils.cpp`）：
+
+- **命名空间支持关闭**：`EngineName`（= C# 类名去 `U` 前缀；`UTcsDevGcProbeDriver` → `TcsDevGcProbeDriver`）
+- **命名空间支持开启**：`<Namespace>_<EngineName>`（点替换成下划线）
+
+而**这个名字给的是 Blueprint**（`CreateOrUpdateOwningBlueprint` 里 `NewObject<UCSBlueprint>(Package, *BlueprintName, …)`）；
+UE 为它生成的**类**才是那个 `UClass`，且带 **`_C`** 后缀 ⇒ 按 `EngineName` 精确匹配 `GetName()` **恒不命中**。
+（同名不可能共存于一个 package ⇒ 这是"两者中必有一个带后缀"的直接推论。）
+
+**修法（按推荐顺序）**：
+
+1. **用结构性判据，别按名找**：遍历 `TObjectIterator<UClass>` 时判 `Candidate->IsChildOf(基类::StaticClass())`（接口同理）——**唯一不依赖命名**的路径。
+2. 名字只作**优先级**、不作门槛：精确 `EngineName` > 精确 `U` 前缀名 > **名字"包含"**（兜住 `_C` 与命名空间前缀）> 基类命中。
+3. **失败必须自曝**：把库里名字像的候选**连同父类与抽象位**打进日志——一次失败即可区分"程序集没加载"与"托管基类没解析"。
+4. **别用 `NewObject<T>(Outer, Class)` 试错**：类不是 `T` 派生时它走 `CastChecked` = **断言（可能崩）**；改 `NewObject<UObject>` + 安全 `Cast`，把崩溃换成可读错误。
+
+**对照事实（判断"是哪一支"）**：托管类的父类由 C# 侧基类决定（`CSManagedClassCompiler` 里 `Field->SetSuperStruct(NewSuperClass)`），
+故 `IsChildOf` 通常可用；若它也不成立，说明托管基类没解析——C# 基类所在 **glue 程序集**必须先于用户程序集加载（见 `LoadOrder.json` 的 `Priority`：glue 100 / user 0）。
+
+**实测记录（2026-10-03）**：某观测装置首跑即因此失败（`未找到驱动类`）；加了三路并集 + 自曝候选后，下一轮日志直接打出
+`驱动类解析为 TcsDevGcProbeDriver_C（候选 2 个）`——一次失败定位根因，未再猜第二轮。
+
 ## 哪些日志是非阻塞的
 
 下面这些信息不一定等于失败：

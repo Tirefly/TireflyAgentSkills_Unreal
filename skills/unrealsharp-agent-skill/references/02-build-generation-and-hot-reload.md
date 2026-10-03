@@ -277,11 +277,15 @@ dotnet build "[ProjectPath]\Plugins\[PluginName]\Intermediate\UnrealSharp\UHT\Ed
 
 ### 3. 手工复现启动阶段的托管构建动作
 
-启动时走的是 UAT + `-ScriptDir`：
+启动时走的是 UAT + `-ScriptDir`。**动作名要用外层命令 `BuildUserSolution`**——`BuildEmitLoadOrder` 是它的内层链路，且**必填 `-SolutionDirectory`**：直接跑它会在当前版本报 `Missing -SolutionDirectory=... parameter` 并以 `ExitCode=1` 结束（2026-10-03 实测）：
 
 ```powershell
-& "[EngineRoot]\Engine\Build\BatchFiles\RunUAT.bat" BuildEmitLoadOrder -ScriptDir="[ProjectPath]\Plugins\UnrealSharp\Build\Scripts" -Project="[ProjectPath]\[ProjectName].uproject" -OutputPath="[ProjectPath]\Binaries\Managed\net10.0" -TargetConfiguration=Development clp=ErrorsOnly
+& "[EngineRoot]\Engine\Build\BatchFiles\RunUAT.bat" BuildUserSolution -ScriptDir="[ProjectPath]\Plugins\UnrealSharp\Build\Scripts" -Project="[ProjectPath]\[ProjectName].uproject" -OutputPath="[ProjectPath]\Binaries\Managed\net10.0" -TargetConfiguration=Development clp=ErrorsOnly
 ```
+
+> `-SolutionDirectory` 由 `BuildUserSolution` 自己填（`Build/Scripts/BuildCommands/BuildUserSolution.cs` 里的默认值是 `this.GetProjectScriptFolder()`）；C++ 侧的 `UnrealSharp::Build::BuildUserSolution`（`Source/UnrealSharpUtilities/Private/CSBuildUtilties.cpp`）同样只传 `OutputPath` / `TargetConfiguration` / `clp`，`-ScriptDir` 与 `-Project` 由 `BuildArguments` 补。
+>
+> **成功判据（实测输出形状）**：出现 `Running dotnet publish on <项目>/Script (configuration: Release)` → 各程序集两行 `-> …\Binaries\Managed\net10.0\` → `Emitting assembly load order 'UserCode' for assemblies: …` → 末行 `BUILD SUCCESSFUL` 且 `ExitCode=0`。产物核对：`Binaries/Managed/net10.0/<UserAssembly>.dll` 与 `UserCode.LoadOrder.json` 的 mtime 一并刷新。
 
 > 旧版那种 `dotnet "...\UnrealSharpBuildTool.dll" --Action BuildEmitLoadOrder --ProjectDirectory ... --PluginDirectory ...` 的写法**已经失效**，该 DLL 不再存在。
 
